@@ -1777,3 +1777,465 @@ function useFetch(url, options = {}) {
 
 ---
 
+## React Core
+
+### What is React JS?
+
+React is a JavaScript library for building user interfaces, developed by Facebook. It allows developers to create reusable UI components and manage the view layer of applications using a declarative paradigm. React uses a virtual DOM to optimize rendering and improve performance.
+
+### Why React.js? What problems does it solve?
+
+React solves several frontend challenges:
+- **Declarative UI**: Instead of imperatively manipulating the DOM, you describe what the UI should look like for a given state. React handles updates efficiently.
+- **Component‑based architecture**: Encourages reusability, maintainability, and separation of concerns.
+- **Efficient updates**: Virtual DOM diffing minimizes costly DOM manipulations.
+- **Unidirectional data flow**: Makes data flow predictable and easier to debug.
+- **Ecosystem and community**: Rich tooling, libraries (React Router, Redux), and strong community support.
+
+### What is JSX and how is it rendered in the browser?
+
+JSX is a syntax extension for JavaScript that looks like HTML but gets transformed into regular JavaScript function calls (`React.createElement`). The browser cannot interpret JSX directly; it is transpiled by tools like Babel into `React.createElement` calls, which produce plain JavaScript objects representing the virtual DOM. These objects are then rendered to the actual DOM by React.
+
+Example:
+```jsx
+const element = <h1>Hello, world!</h1>;
+// Transpiles to:
+const element = React.createElement('h1', null, 'Hello, world!');
+```
+
+### What are components? Functional vs class components.
+
+Components are the building blocks of a React application. They accept inputs (props) and return React elements describing what should appear on screen.
+
+- **Functional components**: Plain JavaScript functions that accept props and return JSX. They are simpler, support hooks, and are the preferred way to write components today.
+- **Class components**: ES6 classes that extend `React.Component` and must implement a `render` method. They have lifecycle methods (`componentDidMount`, etc.) and state management via `this.state` and `this.setState`.
+
+### What are state and props? Difference between them.
+
+- **Props** (short for properties): Read‑only data passed from parent to child. They are immutable within the child component.
+- **State**: Mutable data managed within a component. When state changes, the component re‑renders.
+
+| | Props | State |
+|---|-------|-------|
+| Mutability | Immutable (cannot be changed by child) | Mutable (changed via `setState` or hook setters) |
+| Ownership | Owned by parent, used by child | Owned by the component itself |
+| Purpose | Configure component, pass data down | Handle dynamic data that changes over time |
+
+### What is a hook? Why were hooks introduced?
+
+Hooks are functions that let you “hook into” React state and lifecycle features from functional components. They were introduced in React 16.8 to allow using state, side effects, and other React features without writing classes.
+
+Reasons for hooks:
+- Reuse stateful logic across components without complex patterns like HOCs or render props.
+- Simplify component logic by grouping related code (e.g., `useEffect` for side effects).
+- Avoid the complexity of `this` binding and class lifecycle methods.
+- Improve tree‑shaking and reduce bundle size.
+
+### If we have `var`, `let`, `const`, why do we need state variables?
+
+Regular JavaScript variables do not trigger re‑renders when they change. State variables (`useState`) are designed to:
+- Preserve values across renders.
+- Trigger a re‑render when updated (via the setter function).
+- Work within React’s reconciliation cycle. Without them, changes to variables would not be reflected in the UI.
+
+### What is re‑rendering, and why does it happen?
+
+Re‑rendering is the process where React updates the UI to reflect the current state and props. It happens when:
+- A component’s state changes.
+- Its props change.
+- Its parent re‑renders (by default).
+- A context value it uses changes.
+- A custom hook triggers an update.
+
+React batches updates for performance; re‑rendering does not necessarily mean the DOM is updated – React computes the difference (reconciliation) and only updates the DOM where needed.
+
+### What is reconciliation in React? How does the diffing algorithm work?
+
+Reconciliation is React’s algorithm for determining which parts of the DOM need to be updated when state or props change. It uses a **virtual DOM** (a lightweight representation) and compares it with the previous version.
+
+**Diffing algorithm (simplified)**:
+- **Elements of different types**: The whole subtree is torn down and rebuilt.
+- **Elements of the same type**: React keeps the same DOM node and only updates changed attributes (e.g., `className`). Then it recursively diffs children.
+- **List children with keys**: Keys help identify which items have changed, been added, or removed. Without stable keys, the algorithm may re‑render more than necessary.
+
+### Why are keys important in lists? What happens if keys are unstable?
+
+Keys give each element a stable identity, allowing React to match items between re‑renders. Without keys, React might reuse DOM nodes incorrectly, leading to performance issues or broken UI (e.g., lost focus, incorrect state). If keys are unstable (e.g., using index when the list can reorder), React may re‑create elements unnecessarily or mix up internal state.
+
+### What is the difference between `Router` and `Link` in React Router?
+
+- **`Router`** (e.g., `BrowserRouter`): Provides the routing context and handles history management. It is the parent component that enables navigation and URL sync.
+- **`Link`**: A component that renders an anchor (`<a>`) with the `to` prop. It allows navigation without a full page reload, using client‑side routing.
+
+### What is routing in React? How does it work?
+
+Routing in React is the process of mapping URL paths to different components, enabling a single‑page application (SPA) to simulate multiple pages. React Router (or other libraries) listens to URL changes, matches the path against defined routes, and renders the corresponding component without a full browser refresh. It leverages the browser’s History API (`pushState`, `replaceState`) to manage navigation and updates the UI accordingly.
+
+### Controlled vs uncontrolled components – explain with examples.
+
+- **Controlled component**: Form input whose value is controlled by React state. The input’s value is set via `value` prop and updates via `onChange`. React is the single source of truth.
+  ```jsx
+  const [value, setValue] = useState('');
+  <input value={value} onChange={e => setValue(e.target.value)} />
+  ```
+- **Uncontrolled component**: The DOM itself manages the input state. You access the current value via a ref (`useRef`).
+  ```jsx
+  const inputRef = useRef();
+  <input ref={inputRef} />
+  // later: inputRef.current.value
+  ```
+
+### What is prop drilling? Problems and solutions.
+
+Prop drilling is passing data through multiple layers of components via props, even when intermediate components don’t need that data. This makes code harder to maintain and refactor.
+
+**Solutions**:
+- **Context API**: Create a context and provide values at a higher level, then consume them deep down.
+- **State management libraries**: Redux, Zustand, etc.
+- **Component composition**: Instead of passing props, pass components as children or use render props to flatten the hierarchy.
+
+### How do you pass parent data to a deeply nested child (e.g., 5th child)?
+
+Using **Context** is the most common approach. Create a context, wrap the parent tree with a `Provider`, and consume the context in the deeply nested child via `useContext` or `Context.Consumer`. Alternatively, use a state management library like Redux that provides global state.
+
+### Difference between `useMemo` and `React.memo`.
+
+- **`useMemo`**: A hook that memoizes the result of a computation. It recalculates only when its dependencies change. Used to optimize expensive calculations inside a component.
+- **`React.memo`**: A higher‑order component that memoizes a component. It prevents re‑rendering if the props have not changed (shallow comparison). It wraps the whole component, not a value.
+
+### Difference between `useMemo` and `useCallback`.
+
+- **`useMemo`**: Returns a memoized **value**. It caches the result of a function call.
+- **`useCallback`**: Returns a memoized **function** (the function reference is stable). It is essentially `useMemo(() => fn, deps)`.
+
+Use `useCallback` when passing callbacks to child components that rely on reference equality to avoid unnecessary re‑renders.
+
+### What happens if a component wrapped in `memo()` has its own state changes?
+
+The component will still re‑render when its internal state changes, regardless of `memo`. `React.memo` only controls re‑renders triggered by parent prop changes. State updates always cause a re‑render of the component (unless you use other optimizations like `useState` with a functional update that doesn’t change the value).
+
+### What happens if a child uses `memo()` and parent props don't change?
+
+If the child is wrapped with `React.memo` and its props (by shallow comparison) have not changed, the child will **not** re‑render even if the parent re‑renders. This can prevent unnecessary renders.
+
+### What is state batching? What changed in React 18 regarding batching?
+
+State batching is the process of grouping multiple state updates into a single re‑render to improve performance. In React 17 and earlier, batching only happened inside React event handlers (e.g., `onClick`). Updates inside promises, `setTimeout`, or native events were not batched.
+
+**React 18** introduced **automatic batching** for all updates, regardless of where they originate (promises, timeouts, etc.), using `createRoot`. This reduces unnecessary re‑renders.
+
+### Explain `useEffect` deeply: cleanup function, dependency array pitfalls.
+
+`useEffect` lets you perform side effects (data fetching, subscriptions, DOM manipulations) in functional components. It runs after the browser paints.
+
+- **Dependency array**: If omitted, effect runs after every render. If empty (`[]`), runs only once (mount). If values are provided, effect runs when any of those values change.
+- **Cleanup function**: Return a function from `useEffect` – it runs before the component unmounts and before the next effect execution (to clean up previous subscriptions). Useful for canceling requests, clearing timers, removing event listeners.
+
+**Pitfalls**:
+- Missing dependencies can lead to stale data or infinite loops.
+- Including unnecessary dependencies may cause excessive re‑runs.
+- Using objects or arrays as dependencies without memoization can cause unwanted re‑runs because reference changes every render.
+
+### Difference between `useEffect`, `useLayoutEffect`, and `useInsertionEffect`.
+
+- **`useEffect`**: Runs asynchronously after the browser paints. Suitable for most side effects.
+- **`useLayoutEffect`**: Runs synchronously after all DOM mutations but before the browser paints. Useful for measuring layout or making visual updates that should appear before paint (e.g., scrolling to an element). Use sparingly as it blocks painting.
+- **`useInsertionEffect`**: A newer hook (React 18) intended for CSS‑in‑JS libraries to inject styles before layout effects fire. Not meant for general use.
+
+### What problems does `useMemo` actually solve? When should you NOT use it?
+
+`useMemo` solves unnecessary recomputation of expensive calculations on every render. It also helps maintain referential equality for objects/arrays that are dependencies of other hooks (like `useEffect`).
+
+**When NOT to use it**:
+- For trivial calculations (e.g., `a + b`); the overhead of memoization may exceed the cost.
+- Over‑using `useMemo` can make code less readable and lead to bugs if dependencies are mishandled.
+- It does not guarantee that the value won’t be recomputed if React decides to re‑mount the component (e.g., during memory pressure).
+
+### When would you use `React.memo`?
+
+Use `React.memo` for:
+- Components that receive the same props often but re‑render due to parent re‑renders.
+- Large components that are expensive to re‑render.
+- Pure functional components that depend on props only.
+
+Avoid over‑using `memo` because the shallow prop comparison itself costs time. Use it where profiling shows a benefit.
+
+### Build a custom hook like `useDebounce` or `useFetch`.
+
+**`useDebounce`** (example):
+```javascript
+import { useState, useEffect } from 'react';
+
+function useDebounce(value, delay) {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debouncedValue;
+}
+```
+
+**`useFetch`** (example):
+```javascript
+function useFetch(url, options = {}) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const abortController = new AbortController();
+    const fetchData = async () => {
+      try {
+        const res = await fetch(url, { ...options, signal: abortController.signal });
+        if (!res.ok) throw new Error('Network error');
+        const json = await res.json();
+        setData(json);
+        setLoading(false);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          setError(err);
+          setLoading(false);
+        }
+      }
+    };
+    fetchData();
+    return () => abortController.abort();
+  }, [url, ...Object.values(options)]); // caution: options can cause infinite loops
+  return { data, loading, error };
+}
+```
+
+---
+
+## React Advanced & Internals
+
+### How does React Fiber architecture change rendering?
+
+React Fiber (introduced in React 16) is a complete rewrite of the reconciliation engine. It enables **incremental rendering**, splitting work into chunks and prioritizing updates (e.g., user input over data fetching). Fiber makes React capable of:
+- Pausing, aborting, or reusing work.
+- Assigning priorities to different types of updates.
+- Supporting concurrent rendering and Suspense.
+
+### What is concurrent rendering? When does it help vs hurt?
+
+Concurrent rendering allows React to work on multiple tasks simultaneously, interrupting low‑priority work to handle high‑priority updates (like typing). It helps keep the UI responsive.
+
+**When it helps**: During heavy computations, data fetching, or large list updates – the app stays interactive.
+**When it may hurt**: Not all apps need it; it adds complexity and can cause subtle bugs if components assume synchronous rendering.
+
+### Explain React Server Components vs Client Components.
+
+- **Server Components**: Run on the server and send a special JSON-like format to the client. They never re‑render on the client and can access server resources (databases, file system) directly. They reduce bundle size and improve performance.
+- **Client Components**: Run in the browser and can have interactivity, state, and effects. They are the traditional React components.
+
+In the new React architecture, components are “use client” or “use server” directives. Server Components can import Client Components, but not vice versa.
+
+### What is hydration? How do hydration mismatches occur?
+
+Hydration is the process where React attaches event listeners and reconciles the server‑rendered HTML with the client‑side virtual DOM. It allows interactive components to “take over” the static markup.
+
+**Hydration mismatches** occur when the HTML generated on the server differs from the initial render on the client (e.g., due to different data, random values, or browser‑only APIs). React will then attempt to patch the mismatch, which can cause performance issues and break user experience.
+
+### How does React Context work? When can it hurt performance?
+
+Context provides a way to pass data through the component tree without prop drilling. It works by creating a `Provider` component that holds a value. Any component that consumes the context via `useContext` will re‑render when the context value changes.
+
+**Performance pitfalls**:
+- If the context value changes frequently, many consumers may re‑render.
+- When a component consumes context, it cannot be memoized based on props alone; it will re‑render whenever the context value changes, even if the component’s own props didn’t change.
+- Using context for global state that changes often (e.g., animations) can cause excessive re‑renders.
+
+### Scenario: Context API causes frequent re‑renders – why and how to fix?
+
+**Why**: The context value is an object that gets re‑created on every render of the provider, causing all consumers to re‑render. Even if the actual data hasn’t changed, the reference changed.
+
+**Fixes**:
+- Memoize the context value with `useMemo` to keep the same object unless dependencies change.
+- Split contexts into smaller, focused contexts so consumers only subscribe to what they need.
+- Use state management libraries (like Redux) that allow selective subscriptions.
+- Use `useContextSelector` or similar pattern if available.
+
+### What is code splitting? How does `React.lazy` work internally?
+
+Code splitting is the practice of breaking the bundle into smaller chunks that are loaded on demand, improving initial load time. `React.lazy` allows you to dynamically import a component as a separate chunk.
+
+Internally, `React.lazy` takes a function that calls `import()` and returns a Promise. React suspends rendering until the promise resolves, showing a fallback (via `<Suspense>`). The lazy‑loaded component is then rendered.
+
+### How does tree shaking work in modern bundlers?
+
+Tree shaking is a dead‑code elimination technique that removes unused exports from the final bundle. Bundlers like Webpack and Rollup analyze the import/export graph and only include code that is actually used. This relies on ES modules being statically analyzable.
+
+### What is the purpose of Suspense beyond lazy loading?
+
+Suspense is a generic mechanism for orchestrating asynchronous dependencies in React. Besides lazy loading components, it can be used for data fetching (with libraries like Relay, Next.js) or any asynchronous operation that integrates with Suspense. It lets components “wait” for something before rendering, with a fallback UI.
+
+### Explain the concept of "controlled re‑render boundaries".
+
+A controlled re‑render boundary is a technique to isolate parts of the UI that re‑render frequently from those that don’t. This can be achieved by:
+- Using `React.memo` on child components.
+- Moving state down to the components that need it.
+- Lifting state up only as necessary.
+- Using `useMemo` and `useCallback` to stabilize props.
+- Structuring context to avoid unnecessary consumers.
+
+### How would you build a custom hook library?
+
+A custom hook library is a collection of reusable hooks. Steps:
+1. Design hooks with clear APIs, handling edge cases.
+2. Write them as pure functions that follow the Rules of Hooks.
+3. Document with examples and TypeScript types.
+4. Publish to npm or a private registry.
+5. Include tests (React Testing Library) and ensure they work across versions.
+
+### What are the hidden reasons a component re‑renders even when props don't change?
+
+- **Parent re‑render**: By default, when a parent re‑renders, all its children re‑render, regardless of prop changes. (Fixed with `React.memo`)
+- **Inline functions/objects**: If you pass an inline function or object as prop, the child sees a new reference on every render, causing a re‑render (unless the child is memoized and uses deep comparison or the prop is memoized).
+- **Context changes**: If the component consumes a context that changes, it re‑renders.
+- **Hooks with changing dependencies**: `useEffect`, `useMemo`, `useCallback` dependencies may cause re‑execution of hooks, but not necessarily the whole component re‑render.
+- **State updates that set the same value**: In React 18, if you set state to the same value (using `setState(prev => prev)`), it may still cause a re‑render in some cases (but not in strict mode?).
+
+### How does React 18's automatic batching work?
+
+Automatic batching in React 18 groups multiple state updates from any source (not just event handlers) into a single re‑render. This is enabled by default when using `createRoot`. It reduces unnecessary renders and improves performance. You can opt out using `flushSync`.
+
+### How do you handle real-time updates efficiently in React?
+
+- Use WebSockets or Server‑Sent Events (SSE) for pushing updates.
+- Manage connections with custom hooks that handle lifecycle (connect on mount, disconnect on unmount).
+- Use `useRef` to store the connection object.
+- Throttle or debounce UI updates if they are frequent.
+- Use `useReducer` or state management to batch updates.
+- Leverage `React.memo` and careful component structure to avoid re‑rendering large parts of the UI.
+- Use virtualization for large lists.
+
+---
+
+## Redux & State Management
+
+### What is Redux and why is it used?
+
+Redux is a predictable state container for JavaScript applications. It centralizes application state in a single store, enforces immutability, and provides a unidirectional data flow (action → reducer → new state). It’s used to manage complex state that is shared across many components, especially in large applications.
+
+### What problems does Redux solve in large React applications?
+
+- **State sharing**: Avoids prop drilling for deeply nested components.
+- **Predictability**: State changes happen via pure reducers, making it easier to debug with time‑travel.
+- **Separation of concerns**: UI logic is decoupled from state management.
+- **Middleware**: Enables handling side effects (async actions, logging) in a structured way.
+- **DevTools**: Excellent debugging capabilities.
+
+### Explain the Redux data flow (action → reducer → store → view).
+
+1. **Action**: A plain object with a `type` field describing what happened (e.g., `{ type: 'INCREMENT' }`). Dispatched from the UI.
+2. **Reducer**: A pure function that takes the current state and an action, and returns a new state (immutable update). Reducers combine to form the root reducer.
+3. **Store**: Holds the state tree. Provides `dispatch`, `getState`, and `subscribe`.
+4. **View**: React components subscribe to the store and re‑render when the state changes.
+
+### What is Redux Toolkit and why is it recommended over plain Redux?
+
+Redux Toolkit (RTK) is the official, opinionated toolset for Redux. It simplifies common patterns, reduces boilerplate, and includes best practices out of the box:
+
+- **`configureStore`**: Sets up the store with good defaults (middleware, devtools).
+- **`createSlice`**: Automatically generates action creators and reducers.
+- **`createAsyncThunk`**: Handles asynchronous actions with loading states.
+- **Immer integration**: Allows writing mutable‑looking code in reducers (actual immutability is handled).
+- **Redux DevTools** automatically enabled.
+
+### Explain the flow of Redux Toolkit.
+
+1. **Define slices** using `createSlice`. Each slice contains `name`, `initialState`, and `reducers` (functions that handle actions). Reducers can be simple or use `prepare` callbacks.
+2. **Combine slices** (if needed) and configure the store with `configureStore`.
+3. **Dispatch actions** using the generated action creators (e.g., `increment()`).
+4. **Use hooks** (`useSelector`, `useDispatch`) in React components to read state and dispatch actions.
+5. **Async logic**: Use `createAsyncThunk` to define thunks that handle async requests and dispatch pending/fulfilled/rejected actions.
+
+### How does Redux Toolkit work internally?
+
+- `createSlice` uses `createReducer` and `createAction` under the hood to generate reducers and action creators. It leverages Immer to allow immutable updates with mutable syntax.
+- `configureStore` calls Redux’s `createStore`, applies default middleware (including `redux-thunk`), and enables the Redux DevTools Extension.
+- `createAsyncThunk` returns a thunk that dispatches the lifecycle actions automatically and allows handling of the async operation.
+
+### What is `createSlice()` and what does it contain? (name, initialState, reducers)
+
+`createSlice` accepts an object with:
+- `name`: A string used as prefix for action types.
+- `initialState`: The initial state value.
+- `reducers`: An object mapping action names to reducer functions (or `prepare` callbacks). Each reducer function receives `state` and `action` and can mutate the state (thanks to Immer).
+- `extraReducers` (optional): Allows responding to actions not defined in the slice (e.g., from `createAsyncThunk`).
+
+It returns an object with `actions` (action creators) and `reducer` (slice reducer).
+
+### Explain reducers and extraReducers – when to use each?
+
+- **`reducers`**: Used for actions that are directly handled by this slice. RTK automatically generates action creators with the same names. Good for synchronous, slice‑specific updates.
+- **`extraReducers`**: Used to respond to actions defined elsewhere (e.g., thunks, actions from other slices). It’s often used with `builder` callback to handle `pending`, `fulfilled`, `rejected` of async thunks. It allows a slice to react to actions that are not its own.
+
+### What is `createAsyncThunk()` and why is it used?
+
+`createAsyncThunk` is a function that creates a thunk action that handles asynchronous requests. It takes an action type prefix and a payload creator (async function). It automatically dispatches `pending`, `fulfilled`, and `rejected` actions based on the promise. This reduces boilerplate for loading states and error handling.
+
+### How does async flow work in Redux Toolkit?
+
+1. Define a thunk using `createAsyncThunk`.
+2. Inside the payload creator, perform async work (e.g., fetch).
+3. Dispatch the thunk from a component.
+4. The thunk dispatches the `pending` action immediately.
+5. When the async work completes, it dispatches `fulfilled` with the result, or `rejected` with an error.
+6. In slices, use `extraReducers` to listen to these actions and update state (e.g., set loading false, store data).
+
+### Where and why have you used Redux Toolkit in your projects?
+
+Common scenarios:
+- **Large‑scale apps with complex shared state**: Shopping carts, user authentication, multi‑step forms.
+- **Real‑time dashboards**: To manage data from WebSockets across many components.
+- **Apps with complex async flows**: To maintain loading/error states in a consistent manner.
+- **When multiple features need access to the same data**: E.g., user profile, preferences, notifications.
+
+### Redux vs Context API vs Zustand – how do you decide in a large-scale application?
+
+| | Redux | Context API | Zustand |
+|---|-------|-------------|---------|
+| **Use case** | Large apps, complex state, frequent updates | Simple state, medium nesting, low update frequency | Small‑medium apps, simple API, minimal boilerplate |
+| **Performance** | Optimized with selectors, middleware | Can cause re‑renders; requires careful splitting | Very performant, minimal re‑renders |
+| **Boilerplate** | Higher (but RTK reduces it) | Low | Very low |
+| **Tooling** | Excellent (DevTools) | Basic | Good |
+| **Learning curve** | Steeper | Easy | Easy |
+
+**Decision**: For large‑scale apps with many features, complex async logic, and need for time‑travel debugging, Redux (with RTK) is a solid choice. If you need a lighter alternative with good performance and less boilerplate, Zustand is popular. Context is best for static or low‑frequency updates (e.g., theme, localization) and not recommended for high‑frequency state.
+
+### Compare Redux, MobX, and Recoil for enterprise-scale state management (pros and cons).
+
+| | Redux | MobX | Recoil |
+|---|-------|------|--------|
+| **Paradigm** | Functional, immutable | Observable, mutable | Atomic, graph‑based |
+| **Boilerplate** | High (reducers, actions) | Low (decorators, observables) | Moderate (atoms, selectors) |
+| **Learning curve** | Steep | Moderate | Moderate |
+| **Performance** | Good with selectors | Excellent (fine‑grained) | Good with derived state |
+| **Tooling** | Excellent DevTools | Good | Good (early) |
+| **Scalability** | Proven in huge apps | Good, but mutable may cause unpredictability | Newer, but promising |
+
+- **Redux** is battle‑tested, great for large teams due to strict patterns, but requires discipline.
+- **MobX** allows more flexibility and less code, but mutable updates can be error‑prone in large teams.
+- **Recoil** offers a more React‑centric approach with derived state and concurrent rendering support, but is newer.
+
+### How would you design a state management solution for a complex analytics/dashboard app?
+
+For a dashboard app with:
+- Real‑time data (WebSockets)
+- Multiple widgets that can be individually refreshed
+- Filters that affect many widgets
+- Large datasets (need virtualization)
+
+Approach:
+1. Use Redux Toolkit for global state (filters, user settings, notifications).
+2. Use `createEntityAdapter` for normalized data (e.g., metrics, widgets).
+3. Use `createAsyncThunk` for API calls with cancellation support (AbortController).
+4. For real‑time updates, use a custom middleware to listen to WebSocket messages and dispatch actions.
+5. Use `useSelector` with memoized selectors (Reselect) to avoid re‑renders.
+6. For widget‑specific state (e.g., expanded/collapsed), keep it locally in the widget component to avoid global re‑renders.
+7. Leverage React.memo for widget components that receive stable props.
+8. Use Suspense and lazy loading for heavy dashboard sections.
+
+This combines the predictability of Redux with localized state for performance.
